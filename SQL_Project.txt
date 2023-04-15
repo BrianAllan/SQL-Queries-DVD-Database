@@ -1,0 +1,171 @@
+FIRST QUESTION:
+Determine the quantity rented, the percentage of overall quantity rented, and the quartile for each film category.
+
+/* 1st Question - Query for the quantity, percentage, and quartile for each category */
+WITH cat_table AS (
+    SELECT  cat.name,
+            COUNT(*) AS count
+    FROM category cat
+    JOIN film_category fcat
+    ON fcat.category_id = cat.category_id
+    JOIN film f
+    ON f.film_id = fcat.film_id
+    JOIN inventory i
+    ON i.film_id = f.film_id
+    JOIN rental r
+    ON r.inventory_id = i.inventory_id
+    GROUP BY 1
+    ORDER BY 1
+    )
+
+SELECT  cat_table.name,
+        cat_table.count AS rental_count,
+        ROUND((cat_table.count * 100 /(SELECT SUM(count) FROM cat_table)), 2) AS percent_of_rentals,
+        NTILE(4) OVER (ORDER BY count) AS quartile
+FROM cat_table
+ORDER BY 4 DESC, 2 DESC
+
+
+
+
+SECOND QUESTION:
+(a) What is the top rented film?  And, (b) what are the top 5 films rented by customers who rented the top rented film?
+
+/* 2nd Question Part (a) - Query for top rented film */
+SELECT  f.film_id,
+        f.title,
+        COUNT(r.rental_id) AS rental_count
+FROM film f
+JOIN inventory i
+ON i.film_id = f.film_id
+JOIN rental r
+ON r.inventory_id = i.inventory_id
+GROUP BY 1, 2
+ORDER BY 3 DESC
+LIMIT 1
+
+/* 2nd Question Part (b) - Query for the top 5 films rented by customers who rented the top rented film */
+WITH  top_table AS (
+      SELECT  f.film_id,
+              f.title,
+              COUNT(r.rental_id) AS rental_count
+      FROM film f
+      JOIN inventory i
+      ON i.film_id = f.film_id
+      JOIN rental r
+      ON r.inventory_id = i.inventory_id
+      GROUP BY 1, 2
+      ORDER BY 3 DESC
+      LIMIT 1
+      ),
+
+      cus_table AS (
+      SELECT f.film_id, f.title, r.rental_date, cus.customer_id, cus.first_name, cus.last_name
+      FROM film f
+      JOIN inventory i
+      ON i.film_id = f.film_id
+      JOIN rental r
+      ON r.inventory_id = i.inventory_id
+      JOIN customer cus
+      ON cus.customer_id = r.customer_id
+      WHERE f.film_id = (SELECT film_id FROM top_table)
+      )
+
+SELECT  f.film_id,
+        f.title,
+        COUNT(*)
+FROM cus_table
+JOIN rental r
+ON cus_table.customer_id = r.customer_id
+JOIN inventory i
+ON i.inventory_id = r.inventory_id
+JOIN film f
+ON f.film_id = i.film_id
+WHERE f.film_id != (SELECT film_id FROM top_table)
+GROUP BY 1,2
+ORDER BY 3 DESC
+LIMIT 5
+
+
+
+
+THIRD QUESTION:
+What are the top 10 films (by rental quantity) rented by the top 100 customers (by rental quantity), and what is the inventory for each of these films?
+
+/* 3rd Question - Query for top 10 films, and inventory on each, rented by top 100 customers in terms of rental quantity */
+WITH top_100 AS (
+    SELECT  cus.customer_id,
+            cus.first_name,
+            cus.last_name,
+            COUNT(*)
+    FROM rental r
+    JOIN customer cus
+    ON cus.customer_id = r.customer_id
+    GROUP BY 1, 2, 3
+    ORDER BY 4 DESC
+    LIMIT 100
+    ),
+
+    top_ten AS (
+    SELECT  f.film_id,
+            f.title,
+            COUNT(r.rental_id) AS rental_count
+    FROM top_100
+    JOIN rental r
+    ON r.customer_id = top_100.customer_id
+    JOIN inventory i
+    ON i.inventory_id = r.inventory_id
+    JOIN film f
+    ON f.film_id = i.film_id
+    GROUP BY 1,2
+    ORDER BY 3 DESC
+    LIMIT 10
+    )
+
+SELECT  top_ten.title,
+        top_ten.rental_count,
+        COUNT(i.inventory_id) AS inventory_count
+FROM top_ten
+JOIN inventory i
+ON i.film_id = top_ten.film_id
+GROUP BY 1, 2
+ORDER BY 2 DESC
+
+
+
+
+FOURTH QUESTION:
+What percentage of sales from family-friendly movies comes from each category of family-friendly movies?  Family-friendly movies are ones that come from the following categories: Animation, Children, Classics, Comedy, Family, and Music.
+
+/* 4th Question - Query for the percentage by category of sales from family-friendly movies */
+WITH fam_table AS (
+    SELECT  f.film_id,
+            f.title AS film_title,
+            cat.name AS category_name
+    FROM film f
+    JOIN film_category fcat
+    ON f.film_id = fcat.film_id
+    JOIN category cat
+    ON fcat.category_id = cat.category_id
+    WHERE cat.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')
+    ),
+
+    spending_table AS (
+    SELECT  fam.category_name,
+            SUM(p.amount) AS sales_amount
+    FROM fam_table fam
+    JOIN inventory i
+    ON i.film_id = fam.film_id
+    JOIN rental r
+    ON r.inventory_id = i.inventory_id
+    JOIN payment p
+    ON p.rental_id = r.rental_id
+    GROUP BY 1
+    )
+
+SELECT  s.category_name,
+        s.sales_amount,
+        ROUND((s.sales_amount * 100 /(SELECT SUM(sales_amount) FROM spending_table)), 2) AS percent_family_sales
+
+FROM spending_table s
+ORDER BY 1
