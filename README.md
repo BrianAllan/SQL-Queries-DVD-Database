@@ -11,7 +11,7 @@ The data came from the Sakila DVD Rental Database.  The project tasks were to:
 - create visualizations for answering the questions from the data returned by the SQL queries
 - create a slide presentation with the questions and the visualizations
 
-The results of the SQL queries were saved as CSV files and these were then used in Google Sheets to produce visualizations which were subsequently incorporated into a [slide presentation](https://docs.google.com/presentation/d/e/2PACX-1vSb-P6llVtO7PTo6mH9NAJUBa-WRGmnYiyERJibu7eClBwIVkNPsxIocWtIipys40tGvx36TxgSkqlz/pub?start=true&loop=true&delayms=10000) using Google Slides.  The four SQL queries were submitted for evaluation as a single text file, here `SQL_Project.txt`.
+The results of the SQL queries were saved as CSV files and these were then used in Google Sheets to produce visualizations which were subsequently incorporated into a [slide presentation](https://docs.google.com/presentation/d/e/2PACX-1vSb-P6llVtO7PTo6mH9NAJUBa-WRGmnYiyERJibu7eClBwIVkNPsxIocWtIipys40tGvx36TxgSkqlz/pub?start=true&loop=true&delayms=10000) using Google Slides.  The four SQL queries were submitted for evaluation as a single text file, here [SQL_Project.txt](https://github.com/BrianAllan/SQL-Queries-DVD-Database/blob/master/SQL_Project.txt).
 
 ### Files Used
 SQL_Project.txt  (containing the code of the SQL queries)
